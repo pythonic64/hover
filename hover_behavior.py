@@ -37,12 +37,12 @@ class HoverBehavior(object):
                 return True
             if self.collide_point(*me.pos):
                 me.grab(self)
-                if self.hover_ids.get(me.id, None) != me.pos:
-                    self.hover_ids[me.id] = me.pos
-                    self.dispatch('on_hover_update', me)
-                else:
+                if me.id not in self.hover_ids:
                     self.hover_ids[me.id] = me.pos
                     self.dispatch('on_hover_enter', me)
+                elif self.hover_ids[me.id] != me.pos:
+                    self.hover_ids[me.id] = me.pos
+                    self.dispatch('on_hover_update', me)
                 return True
         elif etype == 'end':
             if me.grab_current is self:
