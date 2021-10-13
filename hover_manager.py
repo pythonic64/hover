@@ -22,10 +22,10 @@ class HoverManager(EventManagerBase):
         self._clock_event = None
 
     def start(self):
-        if self.min_wait_time > 0:
-            global Clock
-            if not Clock:
-                from kivy.clock import Clock
+        global Clock
+        if not Clock:
+            from kivy.clock import Clock
+        if self.min_wait_time >= 0:
             self._clock_event = Clock.schedule_interval(
                 self._dispatch_from_clock,
                 self.min_wait_time
