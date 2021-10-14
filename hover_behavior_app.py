@@ -387,6 +387,10 @@ class MenuDropDownContainer(GridLayout):
 
 class HoverBehaviorApp(App):
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.hover_manager = HoverManager()
+
     def build(self):
         root = RootWidget()
         root.ids.side_menu.data = self.build_side_menu_data()
@@ -434,9 +438,12 @@ class HoverBehaviorApp(App):
 
     def on_start(self):
         super().on_start()
-        hover_manager = HoverManager()
-        self.root_window.register_event_manager(hover_manager)
+        self.root_window.register_event_manager(self.hover_manager)
         self.root_window.clearcolor = (0.12, 0.12, 0.12, 1.0)
+
+    def on_stop(self):
+        super().on_stop()
+        self.root_window.unregister_event_manager(self.hover_manager)
 
 
 if __name__ == '__main__':
