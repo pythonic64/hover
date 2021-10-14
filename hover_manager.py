@@ -113,13 +113,16 @@ class HoverManager(EventManagerBase):
         times = self._event_times
         time_now = Clock.get_time()
         events_to_update = []
-        for me_id, item in self._events.items():
-            me, _ = item[0]
+        for me_id, items in self._events.items():
+            me, _ = items[0]
             if time_now - times[me.id] < self.min_wait_time:
                 continue
             events_to_update.append(me)
         for me in events_to_update:
+            psx, psy, psz = me.psx, me.psy, me.psz
+            me.psx, me.psy, me.psz = me.sx, me.sy, me.sz
             self.dispatch('update', me)
+            me.psx, me.psy, me.psz = psx, psy, psz
 
     def transform_motion_event_2d(self, me, widget=None):
         window = self.window
