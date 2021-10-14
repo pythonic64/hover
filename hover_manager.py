@@ -56,7 +56,12 @@ class HoverManager(EventManagerBase):
     def _dispatch_to_widgets(self, etype, me):
         accepted = False
         me.push()
-        self.transform_motion_event_2d(me)
+        transform_me = getattr(
+            self.window,
+            'transform_motion_event_2d',
+            self.transform_motion_event_2d
+        )
+        transform_me(me)
         for widget in self.window.children[:]:
             if widget.dispatch('on_motion', etype, me):
                 accepted = True
