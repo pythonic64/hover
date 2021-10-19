@@ -1,4 +1,5 @@
 from kivy.properties import AliasProperty, DictProperty, OptionProperty
+from kivy.uix import WIDGET_BEHAVIOR_DISABLED
 
 
 class HoverBehavior(object):
@@ -18,16 +19,19 @@ class HoverBehavior(object):
         super().__init__(**kwargs)
 
     def on_motion(self, etype, me):
-        if me.type_id != 'hover':
+        if not (me.type_id == 'hover' and 'pos' in me.profile):
             return super().on_motion(etype, me)
         if self.hover_mode == 'default':
             if super().on_motion(etype, me):
                 return True
             return self.dispatch('on_hover_event', etype, me)
-        accepted = False
-        if self.hover_mode == 'all':
-            accepted = super().on_motion(etype, me)
-        return self.dispatch('on_hover_event', etype, me) or accepted
+        prev_flags = me.flags
+        if self.hover_mode == 'self':
+            me.flags |= WIDGET_BEHAVIOR_DISABLED
+        accepted = super().on_motion(etype, me)
+        accepted = self.dispatch('on_hover_event', etype, me) or accepted
+        me.flags = prev_flags
+        return accepted
 
     def on_hover_event(self, etype, me):
         if etype == 'update' or etype == 'begin':
