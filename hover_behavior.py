@@ -70,7 +70,7 @@ class HoverBehavior(object):
 class StencilViewHoverMixin(object):
 
     def on_motion(self, etype, me):
-        if me.type_id != 'hover':
+        if not (me.type_id == 'hover' and 'pos' in me.profile):
             return super().on_motion(etype, me)
         if me.grab_current is self or self.collide_point(*me.pos):
             return super().on_motion(etype, me)
