@@ -17,8 +17,8 @@ class HoverManager(EventManagerBase):
         super().__init__()
         self.min_wait_time = kwargs.get('min_wait_time',
                                         HoverManager.min_wait_time)
-        self._events = defaultdict(list)  # me.id -> [(me, me.grab_list[:]),]
-        self._event_times = {}  # me.id -> Clock.get_time()
+        self._events = defaultdict(list)  # me.uid -> [(me, me.grab_list[:]),]
+        self._event_times = {}  # me.uid -> Clock.get_time()
         self._clock_event = None
 
     def start(self):
@@ -42,14 +42,14 @@ class HoverManager(EventManagerBase):
         me_grab_list = me.grab_list[:]
         del me.grab_list[:]
         accepted = self._dispatch_to_widgets(etype, me)
-        self._events[me.id].insert(0, (me, me.grab_list[:]))
-        self._event_times[me.id] = Clock.get_time()
-        if len(self._events[me.id]) == 2:
-            _, prev_me_grab_list = self._events[me.id].pop()
+        self._events[me.uid].insert(0, (me, me.grab_list[:]))
+        self._event_times[me.uid] = Clock.get_time()
+        if len(self._events[me.uid]) == 2:
+            _, prev_me_grab_list = self._events[me.uid].pop()
             self._dispatch_to_grabbed_widgets(me, prev_me_grab_list)
         if etype == 'end':
-            del self._events[me.id]
-            del self._event_times[me.id]
+            del self._events[me.uid]
+            del self._event_times[me.uid]
         me.grab_list[:] = me_grab_list
         return accepted
 
@@ -120,7 +120,7 @@ class HoverManager(EventManagerBase):
         events_to_update = []
         for me_id, items in self._events.items():
             me, _ = items[0]
-            if time_now - times[me.id] < self.min_wait_time:
+            if time_now - times[me.uid] < self.min_wait_time:
                 continue
             events_to_update.append(me)
         for me in events_to_update:
