@@ -1,6 +1,5 @@
 from collections import defaultdict
 
-from kivy import platform
 from kivy.eventmanager import EventManagerBase
 
 Clock = None
@@ -56,12 +55,7 @@ class HoverManager(EventManagerBase):
     def _dispatch_to_widgets(self, etype, me):
         accepted = False
         me.push()
-        transform_me = getattr(
-            self.window,
-            'transform_motion_event_2d',
-            self.transform_motion_event_2d
-        )
-        transform_me(me)
+        self.window.transform_motion_event_2d(me)
         for widget in self.window.children[:]:
             if widget.dispatch('on_motion', etype, me):
                 accepted = True
@@ -90,14 +84,9 @@ class HoverManager(EventManagerBase):
     def _dispatch_to_widget(self, etype, me, widget):
         root_window = widget.get_root_window()
         if root_window and root_window != widget:
-            transform_me = getattr(
-                root_window,
-                'transform_motion_event_2d',
-                self.transform_motion_event_2d
-            )
             me.push()
             try:
-                me = transform_me(me, widget)
+                me = self.window.transform_motion_event_2d(me, widget)
             except AttributeError:
                 me.pop()
                 return
@@ -128,34 +117,3 @@ class HoverManager(EventManagerBase):
             me.psx, me.psy, me.psz = me.sx, me.sy, me.sz
             self.dispatch('update', me)
             me.psx, me.psy, me.psz = psx, psy, psz
-
-    def transform_motion_event_2d(self, me, widget=None):
-        window = self.window
-        width, height = self.get_window_size()
-        me.scale_for_screen(
-            width, height,
-            rotation=window.rotation,
-            smode=window.softinput_mode,
-            kheight=window.keyboard_height
-        )
-        if widget is None:
-            return me
-        parent = widget.parent
-        try:
-            if parent:
-                me.apply_transform_2d(parent.to_widget)
-            else:
-                me.apply_transform_2d(widget.to_widget)
-                me.apply_transform_2d(widget.to_parent)
-        except AttributeError:
-            # when using inner window, an app have grab the touch
-            # but app is removed. The touch can't access
-            # to one of the parent. (i.e, self.parent will be None)
-            # and BAM the bug happen.
-            raise
-        return me
-
-    def get_window_size(self):
-        if platform == 'ios' or self.window._density != 1:
-            return self.window.size[:]
-        return self.window.system_size[:]
