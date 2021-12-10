@@ -114,6 +114,9 @@ class HoverManager(EventManagerBase):
             events_to_update.append(me)
         for me in events_to_update:
             psx, psy, psz = me.psx, me.psy, me.psz
+            dsx, dsy, dsz = me.dsx, me.dsy, me.dsz
             me.psx, me.psy, me.psz = me.sx, me.sy, me.sz
+            me.dsx = me.dsy = me.dsz = 0.0
             self.dispatch('update', me)
             me.psx, me.psy, me.psz = psx, psy, psz
+            me.dsx, me.dsy, me.dsz = dsx, dsy, dsz
