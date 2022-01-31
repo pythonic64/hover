@@ -86,7 +86,7 @@ class HoverManager(EventManagerBase):
         if root_window and root_window != widget:
             me.push()
             try:
-                me = self.window.transform_motion_event_2d(me, widget)
+                self.window.transform_motion_event_2d(me, widget)
             except AttributeError:
                 me.pop()
                 return
