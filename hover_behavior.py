@@ -1,4 +1,4 @@
-from kivy.eventmanager import DONT_DISPATCH
+from kivy.eventmanager import MODE_DONT_DISPATCH
 from kivy.properties import AliasProperty, DictProperty, OptionProperty
 
 
@@ -25,12 +25,12 @@ class HoverBehavior(object):
             if super().on_motion(etype, me):
                 return True
             return self.dispatch('on_hover_event', etype, me)
-        prev_flags = me.flags
+        prev_mode = me.dispatch_mode
         if self.hover_mode == 'self':
-            me.flags |= DONT_DISPATCH
+            me.dispatch_mode = MODE_DONT_DISPATCH
         accepted = super().on_motion(etype, me)
         accepted = self.dispatch('on_hover_event', etype, me) or accepted
-        me.flags = prev_flags
+        me.dispatch_mode = prev_mode
         return accepted
 
     def on_hover_event(self, etype, me):
