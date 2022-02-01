@@ -9,7 +9,7 @@ from hover_manager import HoverManager
 from kivy.lang import Builder
 from kivy.properties import StringProperty, ColorProperty
 from kivy.uix.behaviors import ButtonBehavior
-from hover_behavior import HoverBehavior, StencilViewHoverMixin
+from hover_behavior import HoverBehavior, MotionCollideMixin
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.uix.gridlayout import GridLayout
@@ -377,7 +377,11 @@ class UserItem(HoverBehavior, RecycleDataViewBehavior, BoxLayout):
     hovered_color = ColorProperty([0.4, 0.4, 0.4, 1.0])
 
 
-class HoverRecycleView(StencilViewHoverMixin, RecycleView):
+class HoverRecycleView(MotionCollideMixin, RecycleView):
+    pass
+
+
+class HoverDropDown(MotionCollideMixin, DropDown):
     pass
 
 
@@ -418,7 +422,7 @@ class HoverBehaviorApp(App):
         return [{'name': 'User %d' % i} for i in range(60)]
 
     def show_project_dropdown(self, button):
-        dp = DropDown()
+        dp = HoverDropDown()
         cnt = MenuDropDownContainer()
         dp.add_widget(cnt)
         for i in range(10):
