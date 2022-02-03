@@ -67,7 +67,7 @@ class HoverBehavior(object):
         pass
 
 
-class MotionCollideMixin(object):
+class MotionCollideBehavior(object):
 
     def on_motion(self, etype, me):
         if me.grab_current is self \
