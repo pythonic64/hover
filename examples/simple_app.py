@@ -3,8 +3,7 @@ from kivy.lang import Builder
 from kivy.properties import ColorProperty
 from kivy.uix.label import Label
 
-from hover_behavior import HoverBehavior
-from hover_manager import HoverManager
+from kivy_garden.hover import HoverBehavior, HoverManager
 
 Builder.load_string("""
 <RootWidget>:

@@ -5,11 +5,14 @@ from kivy.config import Config
 Config.set('graphics', 'width', 1200)
 
 from kivy.app import App
-from hover_manager import HoverManager
 from kivy.lang import Builder
 from kivy.properties import StringProperty, ColorProperty, AliasProperty
 from kivy.uix.behaviors import ButtonBehavior
-from hover_behavior import HoverBehavior, MotionCollideBehavior
+from kivy_garden.hover import (
+    HoverBehavior,
+    MotionCollideBehavior,
+    HoverManager
+)
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
 from kivy.uix.gridlayout import GridLayout
