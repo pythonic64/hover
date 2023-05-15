@@ -384,7 +384,7 @@ class MenuDropDownContainer(GridLayout):
     pass
 
 
-class HoverBehaviorApp(App):
+class LargeHoverApp(App):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -446,4 +446,4 @@ class HoverBehaviorApp(App):
 
 
 if __name__ == '__main__':
-    HoverBehaviorApp().run()
+    LargeHoverApp().run()
