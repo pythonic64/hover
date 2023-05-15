@@ -7,7 +7,7 @@ Config.set('graphics', 'width', 1200)
 from kivy.app import App
 from hover_manager import HoverManager
 from kivy.lang import Builder
-from kivy.properties import StringProperty, ColorProperty
+from kivy.properties import StringProperty, ColorProperty, AliasProperty
 from kivy.uix.behaviors import ButtonBehavior
 from hover_behavior import HoverBehavior, MotionCollideBehavior
 from kivy.uix.boxlayout import BoxLayout
@@ -304,25 +304,20 @@ class RootWidget(BoxLayout):
 
 class HoverButton(HoverBehavior, ButtonBehavior, Label):
 
-    background_color = ColorProperty([0.3, 0.3, 0.3, 1.0])
+    def _get_background_color(self):
+        if self.state == 'down':
+            return self.down_color
+        return self.hovered_color if self.hovered else self.normal_color
+
+    background_color = AliasProperty(
+        _get_background_color,
+        bind=(
+            'state', 'hovered', 'normal_color', 'down_color','hovered_color'
+        )
+    )
     normal_color = ColorProperty([0.3, 0.3, 0.3, 1.0])
     down_color = ColorProperty([0.5, 0.5, 1.0, 1.0])
     hovered_color = ColorProperty([0.5, 0.5, 0.5, 1.0])
-
-    def __init__(self, **kwargs):
-        self.fbind('hovered', self._update_background_color)
-        self.fbind('state', self._update_background_color)
-        super().__init__(**kwargs)
-        self.background_color = self.normal_color
-
-    def _update_background_color(self, *args):
-        if self.state == 'down':
-            self.background_color = self.down_color
-        else:
-            if self.hovered and self.state == 'normal':
-                self.background_color = self.hovered_color
-            elif self.state == 'normal':
-                self.background_color = self.normal_color
 
 
 class XHoverButton(HoverButton):
