@@ -7,11 +7,29 @@ Clock = None
 
 
 class HoverManager(EventManagerBase):
-    '''Dispatching hover events.
-    '''
+    """Manager for dispatching hover events through window children list.
+
+    When registered, manager will receive all events with `type_id` set to
+    "hover", transform them to match :attr:`window` and dispatch them through
+    children list using `on_motion` widget event.
+
+    To handle case when hover event position has not changed within
+    `min_wait_time` manager will re-dispatch with all delta values set to 0 and
+    therefore enabling widgets to re-handle the event. This is useful for case
+    when mouse is used the scroll a recycle list of widgets but the mouse
+    indicator position is not changing.
+    """
 
     type_ids = ('hover',)
+
     min_wait_time = 1/30.0
+    """Minimum wait time to repeat existing hover events and defaults to 
+    `1/30.0` seconds. Negative value will turn off the feature.
+
+    To change the default value use `min_wait_time` keyword while making a
+    manager instance or set it directly after the instance is made. Changing
+    the value after the manager has started will have no effect.
+    """
 
     def __init__(self, **kwargs):
         super().__init__()
@@ -124,13 +142,53 @@ class HoverManager(EventManagerBase):
 
 
 class HoverBehavior(object):
+    """HoverBehavior `mixin <https://en.wikipedia.org/wiki/Mixin>`_ to handle
+    hover events.
+
+    Behavior will register widget to receive hover events (events with
+    `type_id` set to "hover") and update attributes :attr:`hovered` and
+    :attr:`hover_ids` depending on the received events.
+
+    :Events:
+        `on_hover_event`: `(etype, me)`
+            Dispatched when this widget receives a hover event.
+        `on_hover_enter`: `(me, )`
+            Dispatched at first time hover event collides with this widget.
+        `on_hover_update`: `(me, )`
+            Dispatched when hover event position changed, but it's still within
+            this widget.
+        `on_hover_leave`: `(me, )`
+            Dispatched when hover event is no longer collides with this widget.
+    """
 
     def _get_hovered(self):
         return bool(self.hover_ids)
 
     hovered = AliasProperty(_get_hovered, bind=['hover_ids'], cache=True)
+    """Indicates if this widget is hovered by at least one hover event.
+
+    :attr:`hovered` is a :class:`~kivy.properties.AliasProperty`.
+    """
+
     hover_ids = DictProperty()
+    """Holds hover `event.uid` to `event.pos` values.
+
+    :attr:`hover_ids` is a :class:`~kivy.properties.DictProperty`.
+    """
+
     hover_mode = OptionProperty('default', options=['default', 'all', 'self'])
+    """How this widget will dispatch received hover events.
+
+    Options:
+
+    - ``'default'``: Dispatch to children first and if none of the child
+    widgets accepts the event (by returning `True`) dispatch `on_hover_event`
+    so that this widget can try to handle it.
+
+    - ``'all'``: Same as `default` but always dispatch `on_hover_event`.
+
+    - ``'self'``: Don't dispatch to children, but dispatch `on_hover_event`.
+    """
 
     __events__ = ('on_hover_event', 'on_hover_enter', 'on_hover_update',
                   'on_hover_leave')
@@ -155,6 +213,18 @@ class HoverBehavior(object):
         return accepted
 
     def on_hover_event(self, etype, me):
+        """Called when a hover event is received.
+
+        This method will test if event collides with this widget using
+        :meth:`collide_point` and dispatch `on_hover_enter`, `on_hover_update`
+        or `on_hover_leave` events.
+
+        :Parameters:
+            `etype`: `str`
+                Event type, one of "begin", "update" or "end"
+            `me`: :class:`~kivy.input.motionevent.MotionEvent`
+                Hover motion event
+        """
         if etype == 'update' or etype == 'begin':
             if me.grab_current is self:
                 return True
@@ -189,6 +259,15 @@ class HoverBehavior(object):
 
 
 class MotionCollideBehavior(object):
+    """MotionCollideBehavior `mixin <https://en.wikipedia.org/wiki/Mixin>`_
+    overrides :meth:`on_motion` to filter-out events which do not collide with
+    the widget or events which are not grabbed events.
+
+    It's recommended to use this behavior with
+    :class:`~kivy.uix.stencilview.StencilView` or its subclasses
+    (`RecycleView`, `ScrollView`, etc.) so that hover events do not get handled
+    when outside of stencil view.
+    """
 
     def on_motion(self, etype, me):
         if me.grab_current is self \
