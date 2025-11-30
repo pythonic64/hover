@@ -1,3 +1,62 @@
+"""
+Hover manager and behavior
+==========================
+
+This module defines three classes to handle hover events:
+
+1. Class :class:`HoverManager` provides dispatching of hover events to widgets
+   in :attr:`~kivy.core.window.WindowBase.children` list.
+2. Class :class:`HoverBehavior` handles hover events for all widgets who
+   inherit from it.
+3. Class :class:`MotionCollideBehavior` provides filtering of all events
+   (not just hover events) in such way that only grabbed events or events who
+   have "pos" in :attr:`~kivy.input.motionevent.MotionEvent.profile` and can
+   pass a collision check are passed through the
+   :meth:`~kivy.uix.widget.Widget.on_motion` method.
+
+A hover event is an instance of :attr:`~kivy.input.motionevent.MotionEvent`
+class with its :attr:`~kivy.input.motionevent.MotionEvent.type_id` set to
+"hover".
+
+HoverManager
+------------
+
+Manager is responsible for dispatching of hover events to widgets in
+the :attr:`~kivy.core.window.WindowBase.children` list. Widgets who registered for
+hover events will receive them in their
+:meth:`~kivy.uix.widget.Widget.on_motion` method.
+
+For your app to use a hover manager, you must register it with
+:meth:`~kivy.core.window.WindowBase.register_event_manager` when app starts in
+and then unregister it with
+:meth:`~kivy.core.window.WindowBase.unregister_event_manager` when app stops.
+
+Example of how to register/unregister a hover manager::
+
+    from kivy.app import App
+    from kivy_garden.hover import HoverManager
+
+    class HoverApp(App):
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.hover_manager = HoverManager()
+
+        def on_start(self):
+            super().on_start()
+            self.root_window.register_event_manager(self.hover_manager)
+
+        def on_stop(self):
+            super().on_stop()
+            self.root_window.unregister_event_manager(self.hover_manager)
+
+Manager expects that widgets will grab the event if they want to always receive
+event type "update" or "end" for that same event and also ungrab it when they
+no longer want to receive it. To grab the event use
+:meth:`~kivy.input.motionevent.MotionEvent.grab` and to ungrab use
+:meth:`~kivy.input.motionevent.MotionEvent.ungrab`.
+"""
+
 from collections import defaultdict
 
 from kivy.eventmanager import EventManagerBase, MODE_DONT_DISPATCH
@@ -24,8 +83,8 @@ class HoverManager(EventManagerBase):
     type_ids = ('hover',)
 
     event_repeat_timeout = 1 / 30.0
-    """Minimum wait time to repeat existing static hover events and it
-    defaults to `1/30.0` seconds. Negative value will turn off the feature.
+    """Minimum wait time to repeat existing static hover events and it defaults
+    to `1/30.0` seconds. Negative value will turn off the feature.
 
     To change the default value use `event_repeat_timeout` keyword while making
     a manager instance or set it directly after the instance is made. Changing
