@@ -22,12 +22,12 @@ HoverManager
 ------------
 
 Manager is responsible for dispatching of hover events to widgets in
-the :attr:`~kivy.core.window.WindowBase.children` list. Widgets who registered for
-hover events will receive them in their
+the :attr:`~kivy.core.window.WindowBase.children` list. Widgets who registered
+for hover events will receive them in their
 :meth:`~kivy.uix.widget.Widget.on_motion` method.
 
 For your app to use a hover manager, you must register it with
-:meth:`~kivy.core.window.WindowBase.register_event_manager` when app starts in
+:meth:`~kivy.core.window.WindowBase.register_event_manager` when app starts
 and then unregister it with
 :meth:`~kivy.core.window.WindowBase.unregister_event_manager` when app stops.
 
@@ -50,11 +50,35 @@ Example of how to register/unregister a hover manager::
             super().on_stop()
             self.root_window.unregister_event_manager(self.hover_manager)
 
-Manager expects that widgets will grab the event if they want to always receive
-event type "update" or "end" for that same event and also ungrab it when they
-no longer want to receive it. To grab the event use
-:meth:`~kivy.input.motionevent.MotionEvent.grab` and to ungrab use
-:meth:`~kivy.input.motionevent.MotionEvent.ungrab`.
+Manager expects every widget to always grab the event if they want to receive
+event type "end" for that same event while the event is in the grabbed state.
+To grab the event use :meth:`~kivy.input.motionevent.MotionEvent.grab` and to
+ungrab use :meth:`~kivy.input.motionevent.MotionEvent.ungrab`. Manager
+manipulates event's "grab_list" when dispatching an event to widgets, which is
+needed to ensure that widgets receive "end" event type for the same event.
+It will also restore the original `grab_list`, received in its
+:meth:`~kivy.eventmanager.EventManagerBase.dispatch` method, after the dispatch
+is done.
+
+Event dispatching works in the following way:
+
+1. If an event is received for the first time, manager will dispatch it to all
+   widgets in `window.children` list and internally store the event itself,
+   copy of the new `grab_list`, and the time of the dispatch. Values are
+   stored for every event, per its
+   :attr:`~kivy.input.motionevent.MotionEvent.uid`.
+2. When the same event is received for the second time, step 1. is done again
+   and then follows the dispatch to the widgets who grabbed that same event.
+   Manager will dispatch event type "end" to the widgets who are found in the
+   previously stored `grab_list` and not found in the event's current
+   `grab_list`. This way is ensured that widgets can handle their state if they
+   didn't receive "update" or "begin" event type in the 3. step.
+3. If a hover event is static (its position doesn't change) and
+   `min_wait_time` greater than 0, manager will dispatch an event type "update"
+   to all events stored in step 1. using `min_wait_time` as timeout between
+   the static events.
+4. On event type "end", data stored in step 1. is removed from the manager's
+   internal storage.
 """
 
 from collections import defaultdict
