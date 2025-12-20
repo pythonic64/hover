@@ -79,6 +79,75 @@ Event dispatching works in the following way:
    the static events.
 4. On event type "end", data stored in step 1. is removed from the manager's
    internal storage.
+
+HoverBehavior
+-------------
+
+:class:`HoverBehavior` is a `mixin <https://en.wikipedia.org/wiki/Mixin>`_
+class which handles hover events received in
+:meth:`~kivy.uix.widget.Widget.on_motion` method. It depends on
+:class:`HoverManager` way of dispatching of hover events - events with
+:attr:`~kivy.input.motionevent.MotionEvent.type_id` set to "hover".
+
+For an overview of behaviors, please refer to the :mod:`~kivy.uix.behaviors`
+documentation.
+
+As a mixin class, :class:`HoverBehavior` must be combined with other widgets::
+
+    class HoverLabel(HoverBehavior, Widget):
+        pass
+
+Behavior supports multi-hover - if one or multiple hover events are hovering
+over the widget, then its property :attr:`HoverBehavior.hovered` will be set to
+`True`.
+
+Example app showing a widget which when hovered with a mouse indicator will
+change color from gray to green::
+
+    from kivy.app import App
+    from kivy.lang import Builder
+    from kivy.uix.widget import Widget
+
+    from kivy_garden.hover import HoverBehavior, HoverManager
+
+    Builder.load_string(\"""
+    <RootWidget>:
+        canvas.before:
+            Color:
+                rgba: [0, 1, 0, 1] if self.hovered else [0.5, 0.5, 0.5, 1]
+            Rectangle:
+                pos: self.pos
+                size: self.size
+    \""")
+
+
+    class RootWidget(HoverBehavior, Widget):
+        pass
+
+
+    class HoverBehaviorApp(App):
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.hover_manager = HoverManager()
+
+        def build(self):
+            return RootWidget(size_hint=(0.5, 0.5),
+                              pos_hint={'center_x': 0.5, 'center_y': 0.5})
+
+        def on_start(self):
+            super().on_start()
+            self.root_window.register_event_manager(self.hover_manager)
+
+        def on_stop(self):
+            super().on_stop()
+            self.root_window.unregister_event_manager(self.hover_manager)
+
+
+    if __name__ == '__main__':
+        HoverBehaviorApp().run()
+
+See :class:`HoverBehavior` for details.
 """
 
 from collections import defaultdict
@@ -237,12 +306,13 @@ class HoverBehavior(object):
         `on_hover_event`: `(etype, me)`
             Dispatched when this widget receives a hover event.
         `on_hover_enter`: `(me, )`
-            Dispatched at first time hover event collides with this widget.
+            Dispatched at first time a hover event collides with this widget.
         `on_hover_update`: `(me, )`
-            Dispatched when hover event position changed, but it's still within
-            this widget.
+            Dispatched when a hover event position changed, but it's still
+            within this widget.
         `on_hover_leave`: `(me, )`
-            Dispatched when hover event is no longer collides with this widget.
+            Dispatched when a hover event is no longer within with this widget
+            or on event end.
     """
 
     def _get_hovered(self):
