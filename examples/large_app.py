@@ -38,7 +38,7 @@ kv = '''
     normal_color: 0, 0, 0, 0
     size_hint_y: None
     height: '30dp'
-    padding: '10dp', 0
+    padding_x: '10dp'
 
 
 <IconButton>:
@@ -326,7 +326,7 @@ class HoverButton(HoverBehavior, ButtonBehavior, Label):
 class XHoverButton(HoverButton):
 
     def on_hovered(self, button, hovered):
-        self.padding = ('20dp', 0) if hovered else ('10dp', 0)
+        self.padding_x = '20dp' if hovered else '10dp'
 
 
 class HoverLabel(HoverBehavior, ButtonBehavior, Label):
