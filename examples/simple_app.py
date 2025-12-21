@@ -6,6 +6,9 @@ from kivy_garden.hover import HoverBehavior, HoverManager
 
 Builder.load_string("""
 <RootWidget>:
+    halign: 'left'
+    text_size: self.width, None
+    padding: '10dp', 0
     canvas.before:
         Color:
             rgba: [0, 0.5, 0, 1] if self.hovered else [0.5, 0.5, 0.5, 1]
