@@ -40,10 +40,10 @@ class HoverManager(EventManagerBase):
         self._clock_event = None
 
     def start(self):
-        global Clock
-        if not Clock:
-            from kivy.clock import Clock
         if self.min_wait_time >= 0:
+            global Clock
+            if not Clock:
+                from kivy.clock import Clock
             self._clock_event = Clock.schedule_interval(
                 self._dispatch_from_clock,
                 self.min_wait_time
@@ -61,7 +61,7 @@ class HoverManager(EventManagerBase):
         del me.grab_list[:]
         accepted = self._dispatch_to_widgets(etype, me)
         self._events[me.uid].insert(0, (me, me.grab_list[:]))
-        self._event_times[me.uid] = Clock.get_time()
+        self._event_times[me.uid] = Clock.get_time() if Clock else 0
         if len(self._events[me.uid]) == 2:
             _, prev_me_grab_list = self._events[me.uid].pop()
             self._dispatch_to_grabbed_widgets(me, prev_me_grab_list)
