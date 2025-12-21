@@ -5,7 +5,7 @@ Hover manager and behavior
 This module defines three classes to handle hover events:
 
 1. Class :class:`HoverManager` provides dispatching of hover events to widgets
-   in :attr:`~kivy.core.window.WindowBase.children` list.
+   in the `Window`'s :attr:`~kivy.core.window.WindowBase.children` list.
 2. Class :class:`HoverBehavior` handles hover events for all widgets who
    inherit from it.
 3. Class :class:`MotionCollideBehavior` provides filtering of all events
@@ -14,7 +14,7 @@ This module defines three classes to handle hover events:
    pass a collision check are passed through the
    :meth:`~kivy.uix.widget.Widget.on_motion` method.
 
-A hover event is an instance of :attr:`~kivy.input.motionevent.MotionEvent`
+A hover event is an instance of :class:`~kivy.input.motionevent.MotionEvent`
 class with its :attr:`~kivy.input.motionevent.MotionEvent.type_id` set to
 "hover".
 
@@ -22,9 +22,10 @@ HoverManager
 ------------
 
 Manager is responsible for dispatching of hover events to widgets in
-the :attr:`~kivy.core.window.WindowBase.children` list. Widgets who registered
-for hover events will receive them in their
-:meth:`~kivy.uix.widget.Widget.on_motion` method.
+the :attr:`~kivy.core.window.WindowBase.children` list. Widgets must register
+for hover events using
+:meth:`~kivy.uix.widget.Widget.register_for_motion_event` to be able to receive
+them in the :meth:`~kivy.uix.widget.Widget.on_motion` method.
 
 For your app to use a hover manager, you must register it with
 :meth:`~kivy.core.window.WindowBase.register_event_manager` when app starts
@@ -52,33 +53,34 @@ Example of how to register/unregister a hover manager::
 
 Manager expects every widget to always grab the event if they want to receive
 event type "end" for that same event while the event is in the grabbed state.
-To grab the event use :meth:`~kivy.input.motionevent.MotionEvent.grab` and to
-ungrab use :meth:`~kivy.input.motionevent.MotionEvent.ungrab`. Manager
-manipulates event's "grab_list" when dispatching an event to widgets, which is
-needed to ensure that widgets receive "end" event type for the same event.
-It will also restore the original `grab_list`, received in its
+To grab an event use :meth:`~kivy.input.motionevent.MotionEvent.grab` and to
+ungrab it use :meth:`~kivy.input.motionevent.MotionEvent.ungrab`. Manager
+manipulates event's :attr:`~kivy.input.motionevent.MotionEvent.grab_list`
+when dispatching an event to widgets, which is needed to ensure that widgets
+receive "end" event type for the same event. It will also restore the original
+:attr:`~kivy.input.motionevent.MotionEvent.grab_list`, received in its
 :meth:`~kivy.eventmanager.EventManagerBase.dispatch` method, after the dispatch
 is done.
 
 Event dispatching works in the following way:
 
 1. If an event is received for the first time, manager will dispatch it to all
-   widgets in `window.children` list and internally store the event itself,
-   copy of the new `grab_list`, and the time of the dispatch. Values are
-   stored for every event, per its
+   widgets in the :attr:`~kivy.core.window.WindowBase.children` list and
+   internally store the event itself, copy of the new `grab_list`, and the time
+   of the dispatch. Values are stored for every event, per its
    :attr:`~kivy.input.motionevent.MotionEvent.uid`.
-2. When the same event is received for the second time, step 1. is done again
+2. When the same event is received for the second time, step 1. is done again,
    and then follows the dispatch to the widgets who grabbed that same event.
    Manager will dispatch event type "end" to the widgets who are found in the
    previously stored `grab_list` and not found in the event's current
    `grab_list`. This way is ensured that widgets can handle their state if they
-   didn't receive "update" or "begin" event type in the 3. step.
+   didn't receive "update" or "begin" event type in the second time dispatch.
 3. If a hover event is static (its position doesn't change) and
-   `min_wait_time` greater than 0, manager will dispatch an event type "update"
-   to all events stored in step 1. using `min_wait_time` as timeout between
-   the static events.
-4. On event type "end", data stored in step 1. is removed from the manager's
-   internal storage.
+   :attr:`HoverManager.min_wait_time` is greater than 0, manager will dispatch
+   an event type "update" to all events stored in step 1. using
+   :attr:`HoverManager.min_wait_time` as timeout between the static events.
+4. On the event type "end", data stored in the step 1. is removed from the
+   manager's internal storage.
 
 HoverBehavior
 -------------
@@ -86,7 +88,7 @@ HoverBehavior
 :class:`HoverBehavior` is a `mixin <https://en.wikipedia.org/wiki/Mixin>`_
 class which handles hover events received in
 :meth:`~kivy.uix.widget.Widget.on_motion` method. It depends on
-:class:`HoverManager` way of dispatching of hover events - events with
+:class:`HoverManager` and its way of dispatching of hover events - events with
 :attr:`~kivy.input.motionevent.MotionEvent.type_id` set to "hover".
 
 For an overview of behaviors, please refer to the :mod:`~kivy.uix.behaviors`
@@ -94,7 +96,7 @@ documentation.
 
 As a mixin class, :class:`HoverBehavior` must be combined with other widgets::
 
-    class HoverLabel(HoverBehavior, Widget):
+    class HoverWidget(HoverBehavior, Widget):
         pass
 
 Behavior supports multi-hover - if one or multiple hover events are hovering
@@ -160,10 +162,10 @@ widget is not the widget itself.
 For an overview of behaviors, please refer to the :mod:`~kivy.uix.behaviors`
 documentation.
 
-Behavior is meant to be used with :class:`~kivy.uix.stencilview.StencilView` or
-its subclasses so that hover events (events with
-:attr:`~kivy.input.motionevent.MotionEvent.type_id` set to "hover") don't get
-handled when their position is outside the view.
+:class:`MotionCollideBehavior` is meant to be used with
+:class:`~kivy.uix.stencilview.StencilView` or its subclasses so that hover
+events (events with :attr:`~kivy.input.motionevent.MotionEvent.type_id` set to
+"hover") don't get handled when their position is outside the view.
 
 Example of using :class:`MotionCollideBehavior` with
 :class:`~kivy.uix.recycleview.RecycleView`::
