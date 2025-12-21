@@ -21,12 +21,15 @@ Builder.load_string("""
 class RootWidget(HoverBehavior, Label):
 
     def on_hover_enter(self, me):
+        super().on_hover_enter(me)
         self.text = f'Enter: {me.pos}'
 
     def on_hover_update(self, me):
+        super().on_hover_update(me)
         self.text = f'Update: {me.pos}'
 
     def on_hover_leave(self, me):
+        super().on_hover_leave(me)
         self.text = f'Leave: {me.pos}'
 
 
