@@ -7,17 +7,18 @@ Clock = None
 
 
 class HoverManager(EventManagerBase):
-    """Manager for dispatching hover events through window children list.
+    """Manager for dispatching hover events to widgets in the window children
+    list.
 
     When registered, manager will receive all events with `type_id` set to
-    "hover", transform them to match :attr:`window` and dispatch them through
-    children list using `on_motion` widget event.
+    "hover", transform them to match :attr:`window` size and dispatch them
+    through the `window.children` list using the `on_motion` event.
 
-    To handle case when hover event position has not changed within
-    `event_repeat_timeout` manager will re-dispatch with all delta values set
-    to 0 and therefore enabling widgets to re-handle the event. This is useful
-    for the case when mouse is used the scroll a recycle list of widgets, but
-    the mouse indicator position is not changing.
+    To handle a case when the hover event position did not change within
+    `event_repeat_timeout` seconds, manager will re-dispatch the event with all
+    delta values set to 0, so that widgets can re-handle the event.
+    This is useful for the case when a mouse is used to scroll a recyclable
+    list of widgets, but the mouse indicator position is not changing.
     """
 
     type_ids = ('hover',)
@@ -26,8 +27,8 @@ class HoverManager(EventManagerBase):
     """Minimum wait time to repeat existing static hover events and it
     defaults to `1/30.0` seconds. Negative value will turn off the feature.
 
-    To change the default value use `event_repeat_timeout` keyword while making a
-    manager instance or set it directly after the instance is made. Changing
+    To change the default value use `event_repeat_timeout` keyword while making
+    a manager instance or set it directly after the instance is made. Changing
     the value after the manager has started will have no effect.
     """
 
