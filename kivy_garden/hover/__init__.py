@@ -86,7 +86,6 @@ class HoverManager(EventManagerBase):
         return accepted
 
     def _dispatch_to_grabbed_widgets(self, me, prev_me_grab_list):
-        # Dispatch 'end' event to widgets in prev_me_grab_list
         prev_grab_state = me.grab_state
         prev_time_end = me.time_end
         me_grab_list = me.grab_list[:]
@@ -96,9 +95,8 @@ class HoverManager(EventManagerBase):
         for weak_widget in prev_me_grab_list:
             if weak_widget not in me_grab_list:
                 widget = weak_widget()
-                if not widget:
-                    continue
-                self._dispatch_to_widget('end', me, widget)
+                if widget:
+                    self._dispatch_to_widget('end', me, widget)
         me.grab_list[:] = me_grab_list
         me.grab_state = prev_grab_state
         me.time_end = prev_time_end
