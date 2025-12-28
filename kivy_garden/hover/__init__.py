@@ -1,3 +1,190 @@
+"""
+Hover manager and behavior
+==========================
+
+This module defines three classes to handle hover events:
+
+1. Class :class:`HoverManager` provides dispatching of hover events to widgets
+   in the `Window`'s :attr:`~kivy.core.window.WindowBase.children` list.
+2. Class :class:`HoverBehavior` handles hover events for all widgets who
+   inherit from it.
+3. Class :class:`MotionCollideBehavior` provides filtering of all events
+   (not just hover events) in such way that only grabbed events or events who
+   have "pos" in :attr:`~kivy.input.motionevent.MotionEvent.profile` and can
+   pass a collision check are passed through the
+   :meth:`~kivy.uix.widget.Widget.on_motion` method.
+
+A hover event is an instance of :class:`~kivy.input.motionevent.MotionEvent`
+class with its :attr:`~kivy.input.motionevent.MotionEvent.type_id` set to
+"hover".
+
+HoverManager
+------------
+
+Manager is responsible for dispatching of hover events to widgets in
+the `Window`'s :attr:`~kivy.core.window.WindowBase.children` list. Widgets must
+register for hover events using
+:meth:`~kivy.uix.widget.Widget.register_for_motion_event` to be able to receive
+those events in the :meth:`~kivy.uix.widget.Widget.on_motion` method.
+
+For your app to use a hover manager, you must register it with
+:meth:`~kivy.core.window.WindowBase.register_event_manager` when app starts
+and then unregister it with
+:meth:`~kivy.core.window.WindowBase.unregister_event_manager` when app stops.
+
+Example of how to register/unregister a hover manager::
+
+    from kivy.app import App
+    from kivy_garden.hover import HoverManager
+
+    class HoverApp(App):
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.hover_manager = HoverManager()
+
+        def on_start(self):
+            super().on_start()
+            self.root_window.register_event_manager(self.hover_manager)
+
+        def on_stop(self):
+            super().on_stop()
+            self.root_window.unregister_event_manager(self.hover_manager)
+
+Manager expects every widget to always grab the event, if they want to receive
+event type "end" for that same event while the event is in the grabbed state.
+To grab an event use :meth:`~kivy.input.motionevent.MotionEvent.grab` and to
+ungrab it use :meth:`~kivy.input.motionevent.MotionEvent.ungrab`. Manager
+manipulates event's :attr:`~kivy.input.motionevent.MotionEvent.grab_list`
+when dispatching an event to widgets, which is needed to ensure that widgets
+receive "end" event type for the same event. It will also restore the original
+:attr:`~kivy.input.motionevent.MotionEvent.grab_list`, received in its
+:meth:`~kivy.eventmanager.EventManagerBase.dispatch` method, after the dispatch
+is done.
+
+Event dispatching works in the following way:
+
+1. If an event is received for the first time, manager will dispatch it to all
+   widgets in the :attr:`~kivy.core.window.WindowBase.children` list and
+   internally store the event itself, copy of the new `grab_list`, and the time
+   of the dispatch. Values are stored for every event, per its
+   :attr:`~kivy.input.motionevent.MotionEvent.uid`.
+2. When the same event is received for the second time, step 1. is done again,
+   and then follows the dispatch to the widgets who grabbed that same event.
+   Manager will dispatch event type "end" to the widgets who are found in the
+   previously stored `grab_list` and not found in the event's current
+   `grab_list`. This way is ensured that widgets can handle their state if they
+   didn't receive "update" or "begin" event type in the second time dispatch.
+3. If a hover event is static (its position doesn't change) and
+   :attr:`HoverManager.event_repeat_timeout` is greater than 0, manager will
+   dispatch an event type "update" to all events stored in step 1. using
+   :attr:`HoverManager.event_repeat_timeout` as timeout between the static
+   events.
+4. On the event type "end", data stored in the step 1. is removed from the
+   manager's internal storage.
+
+HoverBehavior
+-------------
+
+:class:`HoverBehavior` is a `mixin <https://en.wikipedia.org/wiki/Mixin>`_
+class which handles hover events received in the
+:meth:`~kivy.uix.widget.Widget.on_motion` method. It depends on
+:class:`HoverManager` and its way of dispatching of hover events - events with
+:attr:`~kivy.input.motionevent.MotionEvent.type_id` set to "hover".
+
+For an overview of behaviors, please refer to the :mod:`~kivy.uix.behaviors`
+documentation.
+
+As a mixin class, :class:`HoverBehavior` must be combined with other widgets::
+
+    class HoverWidget(HoverBehavior, Widget):
+        pass
+
+Behavior supports multi-hover - if one or multiple hover events are hovering
+over a widget, then its property :attr:`HoverBehavior.hovered` will be set to
+`True`.
+
+Example app showing a widget which when hovered with a mouse indicator will
+change color from gray to green::
+
+    from kivy.app import App
+    from kivy.lang import Builder
+    from kivy.uix.widget import Widget
+
+    from kivy_garden.hover import HoverBehavior, HoverManager
+
+    Builder.load_string(\"""
+    <RootWidget>:
+        canvas.before:
+            Color:
+                rgba: [0, 0.5, 0, 1] if self.hovered else [0.5, 0.5, 0.5, 1]
+            Rectangle:
+                pos: self.pos
+                size: self.size
+    \""")
+
+
+    class RootWidget(HoverBehavior, Widget):
+        pass
+
+
+    class HoverBehaviorApp(App):
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.hover_manager = HoverManager()
+
+        def build(self):
+            return RootWidget(size_hint=(0.5, 0.5),
+                              pos_hint={'center_x': 0.5, 'center_y': 0.5})
+
+        def on_start(self):
+            super().on_start()
+            self.root_window.register_event_manager(self.hover_manager)
+
+        def on_stop(self):
+            super().on_stop()
+            self.root_window.unregister_event_manager(self.hover_manager)
+
+
+    if __name__ == '__main__':
+        HoverBehaviorApp().run()
+
+See :class:`HoverBehavior` for details.
+
+MotionCollideBehavior
+---------------------
+
+:class:`MotionCollideBehavior` is a
+`mixin <https://en.wikipedia.org/wiki/Mixin>`_ class which filters events
+which do not collide with a widget or events for which currently grabbed
+widget is not the widget itself.
+
+For an overview of behaviors, please refer to the :mod:`~kivy.uix.behaviors`
+documentation.
+
+:class:`MotionCollideBehavior` is meant to be used with
+:class:`~kivy.uix.stencilview.StencilView` or its subclasses so that hover
+events (events with :attr:`~kivy.input.motionevent.MotionEvent.type_id` set to
+"hover") don't get handled when their position is outside the view.
+
+Example of using :class:`MotionCollideBehavior` with
+:class:`~kivy.uix.recycleview.RecycleView`::
+
+    FilteredRecycleView(MotionCollideBehavior, RecycleView):
+        pass
+
+:class:`MotionCollideBehavior` overrides
+:meth:`~kivy.uix.widget.Widget.on_motion` to add event filtering::
+
+    class MotionCollideBehavior(object):
+
+        def on_motion(self, etype, me):
+            if me.grab_current is self \
+                    or 'pos' in me.profile and self.collide_point(*me.pos):
+                return super().on_motion(etype, me)
+"""
+
 from collections import defaultdict
 
 from kivy.eventmanager import EventManagerBase, MODE_DONT_DISPATCH
@@ -11,7 +198,7 @@ class HoverManager(EventManagerBase):
     list.
 
     When registered, manager will receive all events with `type_id` set to
-    "hover", transform them to match :attr:`window` size and dispatch them
+    "hover", transform them to match :attr:`window` size and then dispatch them
     through the `window.children` list using the `on_motion` event.
 
     To handle a case when the hover event position did not change within
@@ -24,8 +211,8 @@ class HoverManager(EventManagerBase):
     type_ids = ('hover',)
 
     event_repeat_timeout = 1 / 30.0
-    """Minimum wait time to repeat existing static hover events and it
-    defaults to `1/30.0` seconds. Negative value will turn off the feature.
+    """Minimum wait time to repeat existing static hover events and it defaults
+    to `1/30.0` seconds. Negative value will turn off the feature.
 
     To change the default value use `event_repeat_timeout` keyword while making
     a manager instance or set it directly after the instance is made. Changing
@@ -154,12 +341,14 @@ class HoverBehavior(object):
         `on_hover_event`: `(etype, me)`
             Dispatched when this widget receives a hover event.
         `on_hover_enter`: `(me, )`
-            Dispatched at first time hover event collides with this widget.
+            Dispatched when a hover event collides with this widget for the
+            first time.
         `on_hover_update`: `(me, )`
-            Dispatched when hover event position changed, but it's still within
-            this widget.
+            Dispatched when a hover event position has changed, but it's still
+            within this widget.
         `on_hover_leave`: `(me, )`
-            Dispatched when hover event is no longer collides with this widget.
+            Dispatched when a hover event is no longer within this widget or
+            when an event type "end" is received.
     """
 
     def _get_hovered(self):
@@ -182,13 +371,13 @@ class HoverBehavior(object):
 
     Options:
 
-    - ``'default'``: Dispatch to children first and if none of the child
-    widgets accepts the event (by returning `True`) dispatch `on_hover_event`
-    so that this widget can try to handle it.
+    - ``'default'``: Dispatch to `children` first and if none of the child
+    widgets accepted the event (by returning `True`), then dispatch
+    `on_hover_event` so that this widget can try to handle it.
 
-    - ``'all'``: Same as `default` but always dispatch `on_hover_event`.
+    - ``'all'``: Same as `default`, but always dispatch `on_hover_event`.
 
-    - ``'self'``: Don't dispatch to children, but dispatch `on_hover_event`.
+    - ``'self'``: Don't dispatch to `children`, but dispatch `on_hover_event`.
     """
 
     __events__ = ('on_hover_event', 'on_hover_enter', 'on_hover_update',
@@ -261,12 +450,13 @@ class HoverBehavior(object):
 
 class MotionCollideBehavior(object):
     """MotionCollideBehavior `mixin <https://en.wikipedia.org/wiki/Mixin>`_
-    overrides :meth:`on_motion` to filter-out events which do not collide with
-    the widget or events which are not grabbed events.
+    overrides :meth:`~kivy.uix.widget.Widget.on_motion` to filter-out events
+    which do not collide with the widget or events which are not grabbed
+    events.
 
     It's recommended to use this behavior with
     :class:`~kivy.uix.stencilview.StencilView` or its subclasses
-    (`RecycleView`, `ScrollView`, etc.) so that hover events do not get handled
+    (`RecycleView`, `ScrollView`, etc.) so that hover events don't get handled
     when outside of stencil view.
     """
 
