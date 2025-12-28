@@ -7,46 +7,49 @@ Clock = None
 
 
 class HoverManager(EventManagerBase):
-    """Manager for dispatching hover events through window children list.
+    """Manager for dispatching hover events to widgets in the window children
+    list.
 
     When registered, manager will receive all events with `type_id` set to
-    "hover", transform them to match :attr:`window` and dispatch them through
-    children list using `on_motion` widget event.
+    "hover", transform them to match :attr:`window` size and dispatch them
+    through the `window.children` list using the `on_motion` event.
 
-    To handle case when hover event position has not changed within
-    `min_wait_time` manager will re-dispatch with all delta values set to 0 and
-    therefore enabling widgets to re-handle the event. This is useful for case
-    when mouse is used the scroll a recycle list of widgets but the mouse
-    indicator position is not changing.
+    To handle a case when the hover event position did not change within
+    `event_repeat_timeout` seconds, manager will re-dispatch the event with all
+    delta values set to 0, so that widgets can re-handle the event.
+    This is useful for the case when a mouse is used to scroll a recyclable
+    list of widgets, but the mouse indicator position is not changing.
     """
 
     type_ids = ('hover',)
 
-    min_wait_time = 1/30.0
-    """Minimum wait time to repeat existing hover events and defaults to 
-    `1/30.0` seconds. Negative value will turn off the feature.
+    event_repeat_timeout = 1 / 30.0
+    """Minimum wait time to repeat existing static hover events and it
+    defaults to `1/30.0` seconds. Negative value will turn off the feature.
 
-    To change the default value use `min_wait_time` keyword while making a
-    manager instance or set it directly after the instance is made. Changing
+    To change the default value use `event_repeat_timeout` keyword while making
+    a manager instance or set it directly after the instance is made. Changing
     the value after the manager has started will have no effect.
     """
 
     def __init__(self, **kwargs):
         super().__init__()
-        self.min_wait_time = kwargs.get('min_wait_time',
-                                        HoverManager.min_wait_time)
+        self.event_repeat_timeout = kwargs.get(
+            'event_repeat_timeout',
+            HoverManager.event_repeat_timeout
+        )
         self._events = defaultdict(list)  # me.uid -> [(me, me.grab_list[:]),]
         self._event_times = {}  # me.uid -> Clock.get_time()
         self._clock_event = None
 
     def start(self):
-        if self.min_wait_time >= 0:
+        if self.event_repeat_timeout >= 0:
             global Clock
             if not Clock:
                 from kivy.clock import Clock
             self._clock_event = Clock.schedule_interval(
                 self._dispatch_from_clock,
-                self.min_wait_time
+                self.event_repeat_timeout
             )
 
     def stop(self):
@@ -83,7 +86,6 @@ class HoverManager(EventManagerBase):
         return accepted
 
     def _dispatch_to_grabbed_widgets(self, me, prev_me_grab_list):
-        # Dispatch 'end' event to widgets in prev_me_grab_list
         prev_grab_state = me.grab_state
         prev_time_end = me.time_end
         me_grab_list = me.grab_list[:]
@@ -93,9 +95,8 @@ class HoverManager(EventManagerBase):
         for weak_widget in prev_me_grab_list:
             if weak_widget not in me_grab_list:
                 widget = weak_widget()
-                if not widget:
-                    continue
-                self._dispatch_to_widget('end', me, widget)
+                if widget:
+                    self._dispatch_to_widget('end', me, widget)
         me.grab_list[:] = me_grab_list
         me.grab_state = prev_grab_state
         me.time_end = prev_time_end
@@ -128,7 +129,7 @@ class HoverManager(EventManagerBase):
         events_to_update = []
         for me_id, items in self._events.items():
             me, _ = items[0]
-            if time_now - times[me.uid] < self.min_wait_time:
+            if time_now - times[me.uid] < self.event_repeat_timeout:
                 continue
             events_to_update.append(me)
         for me in events_to_update:
