@@ -19,8 +19,9 @@ from kivy_garden.hover import (
 ### Package content
 - `HoverManager` - an event manager which once registered will dispatch hover
   events throughout the widget tree.
-- `HoverBehavior` - a mixin class to be used with a widget which provides:
-  - `hovered` boolean property which is `True` when hover indicator
+- `HoverBehavior` - a mixin class to be used with widgets. Class supports
+  multi-hover and it also provides:
+  - `hovered` boolean property which is `True` when a hover indicator
     (e.g. mouse) is hovering over a widget.
   - `on_hover_enter`, `on_hover_update`, `on_hover_leave` events which will
     dispatch when a hover indicator has entered, hovered over, or left
