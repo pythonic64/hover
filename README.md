@@ -12,7 +12,7 @@ pip install git+https://github.com/pythonic64/hover.git
 from kivy_garden.hover import (
     HoverManager,
     HoverBehavior,
-    MotionCollideBehavior
+    HoverCollideBehavior
 )
 ```
 
@@ -26,9 +26,9 @@ from kivy_garden.hover import (
   - `on_hover_enter`, `on_hover_update`, `on_hover_leave` events which will
     dispatch when a hover indicator has entered, hovered over, or left
     a widget.
-- `MotionCollideBehavior` - a mixin class to be used with a `StencilView` or
-  its subclasses to pass hover events to child widgets only if a hover
-  indicator is hovering over a widget or when hover event is a grabbed event.
+- `HoverCollideBehavior` - a mixin class to be used with a `StencilView` or
+  its subclasses to filter hover events which are currently grabbed by the 
+  widget itself or events which collide with the widget.
 
 ### Examples
 See [simple_app.py](examples%2Fsimple_app.py) for a basic example on how to

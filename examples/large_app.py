@@ -10,7 +10,7 @@ from kivy.properties import StringProperty, ColorProperty, AliasProperty
 from kivy.uix.behaviors import ButtonBehavior
 from kivy_garden.hover import (
     HoverBehavior,
-    MotionCollideBehavior,
+    HoverCollideBehavior,
     HoverManager
 )
 from kivy.uix.boxlayout import BoxLayout
@@ -375,11 +375,11 @@ class UserItem(HoverBehavior, RecycleDataViewBehavior, BoxLayout):
     hovered_color = ColorProperty([0.4, 0.4, 0.4, 1.0])
 
 
-class HoverRecycleView(MotionCollideBehavior, RecycleView):
+class HoverRecycleView(HoverCollideBehavior, RecycleView):
     pass
 
 
-class HoverDropDown(MotionCollideBehavior, DropDown):
+class HoverDropDown(HoverCollideBehavior, DropDown):
     pass
 
 
